@@ -169,7 +169,8 @@ class TimedGreetingSender:
             
             start_time = datetime.datetime.strptime(config.get("start_time", "00:00"), "%H:%M").time()
             end_time = datetime.datetime.strptime(config.get("end_time", "23:59"), "%H:%M").time()
-            is_cross_day = end_time <= start_time
+            is_exact_time = start_time == end_time
+            is_cross_day = end_time < start_time
 
             # 1. 确定目标逻辑日的开始日期
             #    - 对于重调度，总是跳到下一个逻辑日。
@@ -200,14 +201,22 @@ class TimedGreetingSender:
                 if is_cross_day:
                     window_end += datetime.timedelta(days=1)
 
-            # 4. 在最终确定的时间窗口内生成随机时间
-            time_diff_seconds = (window_end - window_start).total_seconds()
-            if time_diff_seconds <= 0:
-                self.logger.warning(f"任务 '{name}' 的时间范围无效，已跳过。")
-                return None
-            
-            random_offset = self.rand_instance.randint(0, int(time_diff_seconds))
-            scheduled_datetime = window_start + datetime.timedelta(seconds=random_offset)
+            # 4. 根据任务类型（精确时间 vs. 时间范围）计算计划时间
+            if is_exact_time:
+                # 精确时间任务，无需随机偏移
+                scheduled_datetime = window_start
+            else:
+                # 时间范围任务，计算随机偏移
+                time_diff_seconds = (window_end - window_start).total_seconds()
+                if time_diff_seconds < 0: # 小于0是无效的，等于0是精确时间
+                    self.logger.warning(
+                        f"任务 '{name}' 的时间范围无效 (start: {start_time.strftime('%H:%M')}, end: {end_time.strftime('%H:%M')})。"
+                        "对于非跨天任务, start_time 必须早于 end_time。已跳过此任务。"
+                    )
+                    return None
+                
+                random_offset = self.rand_instance.randint(0, int(time_diff_seconds))
+                scheduled_datetime = window_start + datetime.timedelta(seconds=random_offset)
 
             # 5. 最终防卫：如果计算出的时间仍然在过去（例如，初始调度时，随机到了今天已过的时间），
             #    则强制进行一次“重新调度”，以获取下一个周期的有效时间。
@@ -355,7 +364,7 @@ class TimedGreetingPlugin(BasePlugin):
             "admin_qqs": ConfigField(
                 type=list,
                 default=[],
-                description="管理员QQ号列表"
+                description="管理员QQ号列表，用于接收错误通知和使用 /test_greeting 命令。"
             ),
             "llm_model_name": ConfigField(type=str, default="replyer_1", description="使用的LLM模型名称"),
         },
@@ -421,17 +430,27 @@ class TimedGreetingPlugin(BasePlugin):
             asyncio.create_task(self._notify_admin_of_error(error_message))
             return False # 校验失败
 
-        # 校验是否设置了任何目标
+        # 校验发送目标和管理员配置
         targets = self.get_config("targets", [])
-        has_any_id = any(
+        admin_qqs = self.get_config("plugin.admin_qqs", [])
+        
+        has_any_target_id = any(
             id_val
             for target_group in targets
+            if isinstance(target_group, dict) and target_group.get("id")
             for id_val in target_group.get("id", [])
         )
-        
-        if not has_any_id:
-            self.logger.warning("私聊、群聊皆未设置，关闭定时任务。")
-            return False
+
+        if not has_any_target_id:
+            if admin_qqs:
+                # 仅配置了管理员，进入“仅命令”模式
+                self.logger.info("仅配置了管理员QQ，未配置任何发送目标。定时任务已禁用，仅 /test_greeting 命令可用。")
+                # 不创建 scheduler，但返回 True 以加载命令
+                return True
+            else:
+                # 管理员和发送目标均未配置，插件无事可做
+                self.logger.warning("管理员和发送目标均未配置，插件已停用。")
+                return False
 
         # 所有校验通过，启动调度器
         self.scheduler = TimedGreetingSender(self)
