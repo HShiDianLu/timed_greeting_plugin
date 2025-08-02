@@ -1,0 +1,55 @@
+# timed_greeting_plugin - 自动生成的配置文件
+# 在指定时间段内，向指定用户或群组发送由LLM生成的随机问候语。
+
+# 插件基础配置
+[plugin]
+# 是否启用插件
+enabled = true
+# 配置文件版本号，请勿手动修改
+config_version = "0.2.0"
+
+
+# ================================= Admin (管理相关配置) =================================
+# 这是一个列表，您可以添加一个或多个管理员QQ号，使用英文逗号分割。
+admin_qqs = []
+
+# 使用哪个回复模型，replyer_1或replyer_2
+llm_model_name = "replyer_1"
+
+
+# ================================= Targets (发送目标) =================================
+# 在这里配置您希望接收问候语的用户和群组。
+# type: 目标类型。
+#   - "private": 私聊。
+#   - "group":   QQ群。
+#
+# id = [] 在括号内填写qq号或qq群号
+
+# 私聊目标列表，填写一个或多个QQ号，使用英文逗号分割。
+[[targets]]
+type = "private"
+id = []
+
+# QQ群目标列表，填写一个或多个群qq号，使用英文逗号分割。
+[[targets]]
+type = "group"
+id = []
+
+
+# ================================= Schedules (定时任务) =================================
+# 在这里定义具体的定时任务。
+[schedules]
+
+[schedules.morning_greeting]
+enabled = true
+start_time = "08:00"
+end_time = "09:00"
+keywords = ["早安", "早上好", "元气满满"]
+prompt_template = "请根据关键词 '{keyword}' 生成一句简短、友好、自然的早安问候语。请只返回一句话，不要添加任何编号或多余的解释。"
+
+[schedules.evening_greeting]
+enabled = true
+start_time = "22:00"
+end_time = "23:00"
+keywords = ["晚安", "睡个好觉", "做个好梦"]
+prompt_template = "我的设定是'{persona}'。现在请你根据关键词'{keyword}'，以我的身份生成一句简短、温馨、自然的晚安问候语。请只返回一句话，不要添加任何编号或多余的解释。"

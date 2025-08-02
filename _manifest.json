@@ -1,0 +1,20 @@
+{
+  "manifest_version": 1,
+  "name": "定时问候插件",
+  "version": "0.2.0",
+  "description": "在指定时间段内，根据关键词向指定用户或群组发送由LLM生成的语句。",
+  "author": {
+    "name": "Mettafy",
+    "url": "https://github.com/Mettafy"
+  },
+  "license": "AGPL-v3.0",
+  "host_application": {
+    "min_version": "0.9.1",
+    "max_version": "0.9.1"
+  },
+  "keywords": ["定时", "问候", "早安晚安", "提醒", "scheduled", "greeting"],
+  "categories": ["工具", "提醒", "Tools", "Reminder"],
+  "repository_url": "https://github.com/Mettafy/timed_greeting_plugin",
+  "default_locale": "zh-CN",
+  "locales_path": "_locales"
+}
