@@ -10,7 +10,7 @@
   "license": "AGPL-v3.0",
   "host_application": {
     "min_version": "0.9.1",
-    "max_version": "0.9.1"
+    "max_version": "0.10.0"
   },
   "keywords": ["定时", "问候", "早安晚安", "提醒", "scheduled", "greeting"],
   "categories": ["工具", "提醒", "Tools", "Reminder"],
