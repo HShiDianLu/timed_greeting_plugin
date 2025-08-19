@@ -366,13 +366,13 @@ class TimedGreetingPlugin(BasePlugin):
     config_schema = {
         "plugin": {
             "enabled": ConfigField(type=bool, default=True, description="是否启用插件"),
-            "config_version": ConfigField(type=str, default="0.2.0", description="配置文件版本"),
+            "config_version": ConfigField(type=str, default="0.2.1", description="配置文件版本"),
             "admin_qqs": ConfigField(
                 type=list,
                 default=[],
                 description="管理员QQ号列表，用于接收错误通知和使用 /test_greeting 命令。"
             ),
-            "llm_model_name": ConfigField(type=str, default="replyer_1", description="使用的LLM模型名称"),
+            "llm_model_name": ConfigField(type=str, default="replyer", description="使用的LLM模型名称"),
         },
         "targets": ConfigField(
             type=list,
