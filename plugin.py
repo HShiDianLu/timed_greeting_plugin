@@ -11,8 +11,7 @@ from src.plugin_system import (
     ComponentInfo,
     BaseCommand,
 )
-from src.plugin_system.apis import llm_api, send_api, utils_api, config_api
-from src.person_info.person_info import get_person_info_manager
+from src.plugin_system.apis import llm_api, send_api, get_logger, config_api, chat_api
 
 async def _send_greeting_logic(logger, get_config, schedule_config: dict, override_target_qq: str = None):
     """生成并发送问候语的核心逻辑"""
@@ -39,7 +38,8 @@ async def _send_greeting_logic(logger, get_config, schedule_config: dict, overri
 
 
     models = llm_api.get_available_models()
-    model_name = get_config("plugin.llm_model_name", "replyer_1") # 从根配置获取
+    logger.info(f"获取LLM模型：{models}")
+    model_name = get_config("plugin.llm_model_name", "replyer") # 从根配置获取
     model = models.get(model_name)
 
     if not model:
@@ -59,8 +59,12 @@ async def _send_greeting_logic(logger, get_config, schedule_config: dict, overri
     logger.info(f"成功生成问候语: {response}")
 
     # 如果是测试命令，直接发送给发起者
+
+    # logger.debug(f"获取聊天流：{chat_api.get_all_streams()}")
+
     if override_target_qq:
-        sent = await send_api.text_to_user(text=response, user_id=override_target_qq, platform="qq")
+        user_stream_id = chat_api.get_stream_by_user_id(user_id=str(override_target_qq)).stream_id
+        sent = await send_api.text_to_stream(text=response, stream_id=user_stream_id)
         if sent:
             logger.info(f"已成功向测试用户 {override_target_qq} 发送问候。")
         else:
@@ -85,9 +89,11 @@ async def _send_greeting_logic(logger, get_config, schedule_config: dict, overri
             sent = False
             try:
                 if target_type == "private":
-                    sent = await send_api.text_to_user(text=response, user_id=str(target_id), platform="qq")
+                    user_stream_id = chat_api.get_stream_by_user_id(user_id=str(target_id)).stream_id
+                    sent = await send_api.text_to_stream(text=response, stream_id=user_stream_id, platform="qq")
                 elif target_type == "group":
-                    sent = await send_api.text_to_group(text=response, group_id=str(target_id), platform="qq")
+                    group_stream_id = chat_api.get_stream_by_group_id(user_id=str(target_id)).stream_id
+                    sent = await send_api.text_to_stream(text=response, stream_id=group_stream_id, platform="qq")
                 
                 if sent:
                     logger.info(f"已成功向目标 {target_type}:{target_id} 发送问候。")
@@ -132,7 +138,7 @@ class TestGreetingCommand(BaseCommand):
             return False, "未找到计划任务", True
 
         await self.send_text(f"正在手动触发 '{schedule_name}' 任务...")
-        logger = utils_api.get_logger("timed_greeting_plugin_manual")
+        logger = get_logger("timed_greeting_plugin_manual")
         
         # 为任务配置添加名称以便日志记录
         schedule_config['name'] = schedule_name
@@ -155,7 +161,7 @@ class TimedGreetingSender:
         self.plugin = plugin
         self.is_running = False
         self.task = None
-        self.logger = utils_api.get_logger("TimedGreetingSender")
+        self.logger = get_logger("TimedGreetingSender")
         self._scheduled_times = {}  # 任务名 -> 下一个 datetime 执行时间
         self.rand_instance = random.Random()
 
@@ -401,7 +407,7 @@ class TimedGreetingPlugin(BasePlugin):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.scheduler = None
-        self.logger = utils_api.get_logger("TimedGreetingPlugin")
+        self.logger = get_logger("TimedGreetingPlugin")
 
         # 启动时校验
         if not self._validate_and_setup_scheduler():
