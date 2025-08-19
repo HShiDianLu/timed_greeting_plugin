@@ -1,7 +1,7 @@
 {
   "manifest_version": 1,
   "name": "定时问候插件",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "在指定时间段内，根据关键词向指定用户或群组发送由LLM生成的语句。",
   "author": {
     "name": "Mettafy",
