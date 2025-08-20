@@ -63,7 +63,7 @@ async def _send_greeting_logic(logger, get_config, schedule_config: dict, overri
     # logger.debug(f"获取聊天流：{chat_api.get_all_streams()}")
 
     if override_target_qq:
-        user_stream_id = chat_api.get_stream_by_user_id(user_id=str(override_target_qq)).stream_id
+        user_stream_id = chat_api.get_stream_by_user_id(user_id=str(override_target_qq), platform="qq").stream_id
         sent = await send_api.text_to_stream(text=response, stream_id=user_stream_id)
         if sent:
             logger.info(f"已成功向测试用户 {override_target_qq} 发送问候。")
