@@ -89,11 +89,11 @@ async def _send_greeting_logic(logger, get_config, schedule_config: dict, overri
             sent = False
             try:
                 if target_type == "private":
-                    user_stream_id = chat_api.get_stream_by_user_id(user_id=str(target_id)).stream_id
-                    sent = await send_api.text_to_stream(text=response, stream_id=user_stream_id, platform="qq")
+                    user_stream_id = chat_api.get_stream_by_user_id(user_id=str(target_id), platform="qq").stream_id
+                    sent = await send_api.text_to_stream(text=response, stream_id=user_stream_id)
                 elif target_type == "group":
-                    group_stream_id = chat_api.get_stream_by_group_id(user_id=str(target_id)).stream_id
-                    sent = await send_api.text_to_stream(text=response, stream_id=group_stream_id, platform="qq")
+                    group_stream_id = chat_api.get_stream_by_group_id(group_id=str(target_id), platform="qq").stream_id
+                    sent = await send_api.text_to_stream(text=response, stream_id=group_stream_id)
                 
                 if sent:
                     logger.info(f"已成功向目标 {target_type}:{target_id} 发送问候。")
@@ -366,13 +366,13 @@ class TimedGreetingPlugin(BasePlugin):
     config_schema = {
         "plugin": {
             "enabled": ConfigField(type=bool, default=True, description="是否启用插件"),
-            "config_version": ConfigField(type=str, default="0.2.1", description="配置文件版本"),
+            "config_version": ConfigField(type=str, default="0.2.0", description="配置文件版本"),
             "admin_qqs": ConfigField(
                 type=list,
                 default=[],
                 description="管理员QQ号列表，用于接收错误通知和使用 /test_greeting 命令。"
             ),
-            "llm_model_name": ConfigField(type=str, default="replyer", description="使用的LLM模型名称"),
+            "llm_model_name": ConfigField(type=str, default="replyer_1", description="使用的LLM模型名称"),
         },
         "targets": ConfigField(
             type=list,
